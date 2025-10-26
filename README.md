@@ -17,18 +17,46 @@ ESP32-based flight controller for PWM receivers and four conventional servos. Co
 - PWM receiver inputs: CH1→GPIO27, CH2→GPIO25, CH4→GPIO14, CH6→GPIO26
 - Servos: right aileron→GPIO21, left aileron→GPIO19, elevator→GPIO18, rudder→GPIO5
 
-## Building
+## Rebuilding the Project
+
+### Option A – PlatformIO (recommended)
+
+1. Install VS Code and the PlatformIO extension.
+2. Clone this repository: `git clone <repo-url> && cd ESP32FC`.
+3. Build: `pio run`.
+4. Upload: `pio run --target upload`.
+5. Monitor telemetry: `pio device monitor -b 115200`.
+
+PlatformIO automatically fetches library dependencies pinned in `platformio.ini`.
+
+#### Building
 
 ```bash
 pio run
 ```
 
-## Uploading & Monitor
+Compiles the PlatformIO project using the environment and libraries defined in `platformio.ini`.
+
+#### Uploading & Monitor
 
 ```bash
 pio run --target upload
+```
+
+Builds and flashes the firmware to the connected ESP32.
+
+```bash
 pio device monitor -b 115200
 ```
+
+Opens the serial monitor at 115200 baud to view telemetry output.
+
+### Option B – Arduino IDE
+
+1. Install the ESP32 board support package via Boards Manager.
+2. Download the zipped dependency bundle from [`lib/dependencies.zip`](lib/dependencies.zip) and install each ZIP through **Sketch → Include Library → Add .ZIP Library**.
+3. Copy the contents of `src/main.cpp` into an Arduino sketch folder named `ESP32FC`.
+4. Select **Tools → Board → ESP32 Dev Module**, choose the correct COM port, and upload.
 
 ## Calibration & Operation
 
