@@ -36,3 +36,7 @@ pio device monitor -b 115200
 2. Verify telemetry over serial (100 ms interval) from [`printTelemetry`](src/main.cpp).
 3. Take off with stabilization off; engage stabilization mid-flight using CH6 ≥1500 µs.
 4. Tune PID gains in [`rollPidSettings`](src/main.cpp), [`pitchPidSettings`](src/main.cpp), and [`yawPidSettings`](src/main.cpp) as needed.
+
+## Acknowledgements
+
+Generative AI (GitHub Copilot) assisted with code and documentation throughout this project.
