@@ -11,10 +11,10 @@ namespace {
 constexpr uint8_t SDA_PIN = 22;
 constexpr uint8_t SCL_PIN = 23;
 
-constexpr uint8_t CH1_PIN = 27;  // Aileron
-constexpr uint8_t CH2_PIN = 25;  // Elevator
-constexpr uint8_t CH4_PIN = 14;  // Rudder
-constexpr uint8_t CH6_PIN = 26;  // Stabilization mode
+constexpr uint8_t CH1_PIN = 34;  // Aileron
+constexpr uint8_t CH2_PIN = 35;  // Elevator
+constexpr uint8_t CH4_PIN = 32;  // Rudder
+constexpr uint8_t CH6_PIN = 33;  // Stabilization mode
 
 constexpr uint8_t SERVO_RIGHT_AILERON_PIN = 21;
 constexpr uint8_t SERVO_LEFT_AILERON_PIN = 19;
@@ -35,7 +35,7 @@ constexpr uint32_t TELEMETRY_PERIOD_MS = 100;
 constexpr int SERVO_MIN_US = 1000;
 constexpr int SERVO_MAX_US = 2000;
 constexpr int SERVO_NEUTRAL_US = 1500;
-constexpr int SERVO_OUTPUT_RANGE_US = 300;  // Max PID correction magnitude
+constexpr int SERVO_OUTPUT_RANGE_US = 300;  // Max PID correction magnitude. 0-500 us. <150 us for weaker stabilization, 250-350 for mid range stabilization, 500 for strongest stabilization. 
 
 // ===== Kalman Filter Settings ===== //
 struct KalmanSettings {
@@ -55,13 +55,18 @@ struct PIDSettings {
 	double outputLimit;
 };
 
-PIDSettings rollPidSettings{1.0, 0.0, 0.0, SERVO_OUTPUT_RANGE_US};
-PIDSettings pitchPidSettings{1.0, 0.0, 0.0, SERVO_OUTPUT_RANGE_US};
-PIDSettings yawPidSettings{1.0, 0.0, 0.0, SERVO_OUTPUT_RANGE_US};
+// Max setpoint angles. 0-180. Maximum deflection from neutral (90). 
+constexpr float MAX_SETPOINT_ROLL_DEG = 45.0f; 
+constexpr float MAX_SETPOINT_PITCH_DEG = 45.0f;
+constexpr float MAX_SETPOINT_YAW_DEG = 45.0f;
 
-constexpr float MAX_SETPOINT_ROLL_DEG = 30.0f;
-constexpr float MAX_SETPOINT_PITCH_DEG = 30.0f;
-constexpr float MAX_SETPOINT_YAW_DEG = 30.0f;
+PIDSettings rollPidSettings{1.0, 0.0, 0.0, MAX_SETPOINT_ROLL_DEG};
+PIDSettings pitchPidSettings{1.0, 0.0, 0.0, MAX_SETPOINT_PITCH_DEG};
+PIDSettings yawPidSettings{1.0, 0.0, 0.0, MAX_SETPOINT_YAW_DEG};
+
+constexpr float ROLL_US_PER_DEG = static_cast<float>(SERVO_OUTPUT_RANGE_US) / MAX_SETPOINT_ROLL_DEG;    // Converts roll correction degrees to servo microseconds.
+constexpr float PITCH_US_PER_DEG = static_cast<float>(SERVO_OUTPUT_RANGE_US) / MAX_SETPOINT_PITCH_DEG;  // Converts pitch correction degrees to servo microseconds.
+constexpr float YAW_US_PER_DEG = static_cast<float>(SERVO_OUTPUT_RANGE_US) / MAX_SETPOINT_YAW_DEG;      // Converts yaw correction degrees to servo microseconds.
 
 // ===== RC Input Handling ===== //
 struct RCChannelState {
@@ -284,10 +289,28 @@ void applyServoOutputs(int aileronRightUs, int aileronLeftUs, int elevatorUs, in
 }
 
 void printTelemetry(float dtSeconds) {
+	/*
+	// Print IMU and filter data
 	Serial.printf(
-			"dt:%.6f\taccR:%.2f\taccP:%.2f\tgx:%.3f\tgy:%.3f\troll:%.2f\tpitch:%.2f\tbiasR:%.5f\tbiasP:%.5f\n",
+		"dt:%.6f\taccR:%.2f\taccP:%.2f\tgx:%.3f\tgy:%.3f\troll:%.2f\tpitch:%.2f\tbiasR:%.5f\tbiasP:%.5f\n",
 			dtSeconds, accelRollDeg, accelPitchDeg, gyroXRate, gyroYRate, rollDeg, pitchDeg,
 			kalmanRoll.getQbias(), kalmanPitch.getQbias());
+	*/
+
+	/*
+	// Print PID values
+	Serial.printf(
+		"RSP:%.2f\tRIN:%.2f\tROU:%.2f\tPSP:%.2f\tPIN:%.2f\tPOU:%.2f\tYSP:%.2f\tYIN:%.2f\tYOU:%.2f\n",
+		rollSetpoint, rollInput, rollOutput,
+		pitchSetpoint, pitchInput, pitchOutput,
+		yawSetpoint, yawInput, yawOutput);
+	*/
+
+		// Print RC channel values
+	Serial.printf(
+		"CH1:%d\tCH2:%d\tCH4:%d\tCH6:%d\n",
+		readChannel(RC_CH1), readChannel(RC_CH2),
+		readChannel(RC_CH4), readChannel(RC_CH6));
 }
 
 }  // namespace
@@ -361,9 +384,13 @@ void loop() {
 		pitchPID.Compute();
 		yawPID.Compute();
 
-		aileronRightUs = SERVO_NEUTRAL_US + static_cast<int>(rollOutput);
-		elevatorUs = SERVO_NEUTRAL_US + static_cast<int>(pitchOutput);
-		rudderUs = SERVO_NEUTRAL_US + static_cast<int>(yawOutput);
+		const int rollCorrectionUs = constrain(static_cast<int>(rollOutput * ROLL_US_PER_DEG), -SERVO_OUTPUT_RANGE_US, SERVO_OUTPUT_RANGE_US);
+		const int pitchCorrectionUs = constrain(static_cast<int>(pitchOutput * PITCH_US_PER_DEG), -SERVO_OUTPUT_RANGE_US, SERVO_OUTPUT_RANGE_US);
+		const int yawCorrectionUs = constrain(static_cast<int>(yawOutput * YAW_US_PER_DEG), -SERVO_OUTPUT_RANGE_US, SERVO_OUTPUT_RANGE_US);
+
+		aileronRightUs = SERVO_NEUTRAL_US + rollCorrectionUs;
+		elevatorUs = SERVO_NEUTRAL_US + pitchCorrectionUs;
+		rudderUs = SERVO_NEUTRAL_US + yawCorrectionUs;
 	}
 
 	const int aileronLeftUs = SERVO_NEUTRAL_US - (aileronRightUs - SERVO_NEUTRAL_US);
