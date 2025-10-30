@@ -8,7 +8,7 @@ ESP32-based flight controller for PWM receivers and four conventional servos. Co
 - **Mode switchable stabilization**: raw pass-through below 1500 µs, PID-stabilized above 1500 µs; see [`loop`](src/main.cpp).
 - **Independent PID loops** for roll, pitch, and yaw using [`rollPID`](src/main.cpp), [`pitchPID`](src/main.cpp), and [`yawPID`](src/main.cpp).
 - **Failsafe RC handling**: signals time out after 50 ms in [`readChannel`](src/main.cpp).
-- **Servo mirroring**: left/right aileron differential handled in [`applyServoOutputs`](src/main.cpp).
+- **Selectable aileron mirroring**: optional left/right inversion via `INVERT_LEFT_AILERON` in [`loop`](src/main.cpp).
 
 ## Hardware
 
@@ -16,6 +16,11 @@ ESP32-based flight controller for PWM receivers and four conventional servos. Co
 - MPU6050 IMU on I²C pins 22 (SDA) / 23 (SCL)
 - PWM receiver inputs: CH1→GPIO27, CH2→GPIO25, CH4→GPIO14, CH6→GPIO26
 - Servos: right aileron→GPIO21, left aileron→GPIO19, elevator→GPIO18, rudder→GPIO5
+
+### PCB port mapping
+
+- Servo headers: `S4`→right aileron, `S3`→left aileron, `S2`→elevator, `S1`→rudder. If the ailerons move opposite to stick input, swap the plugs in `S4` and `S3` instead of rewiring the linkage.
+- Receiver headers: `C1`→channel 1 (aileron), `C2`→channel 2 (elevator), `C3`→channel 4 (rudder), `C4`→channel 6 or 5 (stabilization mode switch).
 
 ## Rebuilding the Project
 
