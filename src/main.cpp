@@ -37,6 +37,8 @@ constexpr int SERVO_MAX_US = 2000;
 constexpr int SERVO_NEUTRAL_US = 1500;
 constexpr int SERVO_OUTPUT_RANGE_US = 300;  // Max PID correction magnitude. 0-500 us. <150 us for weaker stabilization, 250-350 for mid range stabilization, 500 for strongest stabilization. 
 
+constexpr bool INVERT_LEFT_AILERON = false;  // Mirror the left aileron output if the mechanical linkage is not already inverted.
+
 // ===== Kalman Filter Settings ===== //
 struct KalmanSettings {
 	float qAngle;
@@ -393,7 +395,9 @@ void loop() {
 		rudderUs = SERVO_NEUTRAL_US + yawCorrectionUs;
 	}
 
-	const int aileronLeftUs = SERVO_NEUTRAL_US - (aileronRightUs - SERVO_NEUTRAL_US);
+	const int aileronLeftUs = INVERT_LEFT_AILERON
+		                           ? SERVO_NEUTRAL_US - (aileronRightUs - SERVO_NEUTRAL_US)
+		                           : aileronRightUs;
 
 	applyServoOutputs(aileronRightUs, aileronLeftUs, elevatorUs, rudderUs);
 
