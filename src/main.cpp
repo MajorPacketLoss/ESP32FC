@@ -58,9 +58,9 @@ struct PIDSettings {
 };
 
 // Max setpoint angles. 0-180. Maximum deflection from neutral (90). 
-constexpr float MAX_SETPOINT_ROLL_DEG = 45.0f; 
-constexpr float MAX_SETPOINT_PITCH_DEG = 45.0f;
-constexpr float MAX_SETPOINT_YAW_DEG = 45.0f;
+constexpr float MAX_SETPOINT_ROLL_DEG = 90.0f; 
+constexpr float MAX_SETPOINT_PITCH_DEG = 90.0f;
+constexpr float MAX_SETPOINT_YAW_DEG = 90.0f;
 
 PIDSettings rollPidSettings{1.0, 0.0, 0.0, MAX_SETPOINT_ROLL_DEG};
 PIDSettings pitchPidSettings{1.0, 0.0, 0.0, MAX_SETPOINT_PITCH_DEG};
@@ -299,20 +299,21 @@ void printTelemetry(float dtSeconds) {
 			kalmanRoll.getQbias(), kalmanPitch.getQbias());
 	*/
 
-	/*
+	
 	// Print PID values
 	Serial.printf(
 		"RSP:%.2f\tRIN:%.2f\tROU:%.2f\tPSP:%.2f\tPIN:%.2f\tPOU:%.2f\tYSP:%.2f\tYIN:%.2f\tYOU:%.2f\n",
 		rollSetpoint, rollInput, rollOutput,
 		pitchSetpoint, pitchInput, pitchOutput,
 		yawSetpoint, yawInput, yawOutput);
-	*/
-
-		// Print RC channel values
+	
+	/*
+	// Print RC channel values
 	Serial.printf(
 		"CH1:%d\tCH2:%d\tCH4:%d\tCH6:%d\n",
 		readChannel(RC_CH1), readChannel(RC_CH2),
 		readChannel(RC_CH4), readChannel(RC_CH6));
+	*/
 }
 
 }  // namespace
